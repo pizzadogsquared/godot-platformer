@@ -7,12 +7,9 @@ const AIR_ACCEL = 850.0
 const AIR_DEACCEL = 350.0
 const JUMP_VELOCITY = 400.0
 const STOP_JUMP_FORCE = 750.0
-const CLIMB_UP = -100.0
-const CLIMB_DOWN = 100.0
-const CLIMB_UP_MAX = -100.0
-const CLIMB_DOWN_MAX = 100.0
-const HARD_UP_MAX = 1000.0
-const HARD_DOWN_MAX = 1000.0
+const CLIMB_FORCE = 400.0
+const CLIMB_MAX = 200.0
+const CLIMB_HMAX = 1700.0
 const MAX_FLOOR_AIRBORN_TIME = 0.15
 const MAX_WALL_AIRBORN_TIME = 0.15
 const MAX_JUMPS = 2
@@ -23,6 +20,9 @@ var jumps_used := 0
 var siding_left := false
 var jumping := false
 var stopping_jump := false
+var up_limit := false
+var down_limit := false
+var wall_state := 0
 
 var floor_h_velocity: float = 0.0
 var floor_v_velocity: float = 0.0
@@ -69,7 +69,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	
 	var found_wall := false
 	var wall_index := -1
-	var climb_momentum := velocity.y
+	wall_state = 0
 	
 	for contact_index in state.get_contact_count():
 		var collision_normal = state.get_contact_local_normal(contact_index)
@@ -79,12 +79,14 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 			if move_right:
 				found_wall = true
 				wall_index = contact_index
+				wall_state = -1
 				
 		# Check right wall collision
 		if collision_normal.dot(Vector2(1, 0)) > 0.6:
 			if move_left:
 				found_wall = true
 				wall_index = contact_index
+				wall_state = 1
 				
 	if found_floor:
 		airborn_time = 0.0
@@ -96,10 +98,12 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 				
 	# Do general jump logic
 	if jumping:
+		up_limit = false
 		# Falling logic
 		if velocity.y > 0:
 			# Turn off jumping flag because velocity goes down
 			jumping = false
+			down_limit = false
 
 		# If the player releases jump input
 		elif not jump_hold and not jump:
@@ -112,6 +116,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if jumps_used + 1 < MAX_JUMPS and jump and jump_hold:
 		# Check if player wants to jump
 		velocity.y = -JUMP_VELOCITY
+		up_limit = false
 		jumping = true
 		stopping_jump = false
 		jumps_used += 1
@@ -120,26 +125,27 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 			
 		
 	if found_wall:
-		# Climbing down logic.
-		var yv := velocity.y
-		# a positive y value indicates downward movement
+		if move_up and not crouch:
+			velocity.y = climb_up(velocity, step)
 		if crouch and not move_up:
-			if yv >= HARD_DOWN_MAX:
-				climb_momentum = HARD_DOWN_MAX
-				velocity.y = climb_momentum
-			if velocity.y <= CLIMB_DOWN_MAX:
-				velocity.y = climb_momentum + CLIMB_DOWN
-		# a negative y value indicates upward movement
-		elif move_up and not crouch:
-			if velocity.y >= CLIMB_UP_MAX:
-				velocity.y += CLIMB_UP
-		# if not moving upward or downward
-		else:
-			velocity.y = 0
+			velocity.y = climb_down(velocity, step)
+		if (not crouch and not move_up) or (move_up and crouch):
+			var yv := absf(velocity.y)
+			# Decrease that velocity until xv is 0.
+			yv -= STOP_JUMP_FORCE * step
+			if yv < 0:
+				yv = 0
+			# Set velocity to direction times slowing velocity
+			velocity.y = signf(velocity.y) * yv
+		if jump:
+			velocity = wall_jump(velocity, step, wall_state)
+
+
 			
 	# Do checks for character on floor for gen movement
 	if on_floor and not found_wall:
 		jumps_used = 0
+		down_limit = false
 		# If character is just moving left
 		if move_left and not move_right:
 			if velocity.x > -RUN_MAX_VELOCITY:
@@ -173,6 +179,8 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		
 	# Do general airborn logic
 	else:
+		if not jumping:
+			down_limit = false
 		# If player is moving left in the air
 		if move_left and not move_right:
 			if velocity.x > -RUN_MAX_VELOCITY:
@@ -223,3 +231,37 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	
 	state.set_linear_velocity(velocity)
 	
+func climb_up(velocity, step):
+	if velocity.y < -CLIMB_FORCE:
+		velocity.y -= CLIMB_FORCE * step
+		return velocity.y
+	if velocity.y < -CLIMB_MAX:
+		# Get absolute value of current velocity
+		var yv := absf(velocity.y)
+		# Decrease that velocity until xv is 0.
+		yv -= RUN_DEACCEL * step
+		if yv < CLIMB_MAX:
+			yv = CLIMB_MAX
+		# Set velocity to direction times slowing velocity
+		velocity.y = signf(velocity.y) * yv
+		return velocity.y
+	velocity.y -= CLIMB_FORCE * step * 4
+	return velocity.y
+	
+func climb_down(velocity, step):
+	
+	velocity.y += CLIMB_FORCE * step
+	if velocity.y > CLIMB_MAX:
+		velocity.y = CLIMB_MAX
+	return velocity.y
+	
+func wall_jump(velocity, step, wall_s):
+	# Jump while clinging to a wall on your left
+	if (wall_s == -1):
+		velocity.y = -JUMP_VELOCITY / sqrt(2)
+		velocity.x = -JUMP_VELOCITY / sqrt(2)
+	# Jump while clinging to a wall on your right
+	if (wall_s == 1):
+		velocity.y = -JUMP_VELOCITY / sqrt(2)
+		velocity.x = JUMP_VELOCITY / sqrt(2)
+	return velocity
