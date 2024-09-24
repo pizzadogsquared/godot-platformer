@@ -28,5 +28,4 @@ texture = ExtResource("3_8luk7")
 offset = Vector2(0, 8)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Tip"]
-position = Vector2(0, 15.701)
 shape = SubResource("CapsuleShape2D_a5wpk")

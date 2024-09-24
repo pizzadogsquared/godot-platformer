@@ -4,7 +4,7 @@ This script controls the dynamic camera.
 extends Camera2D
 
 # Radius of the zone in the middle of the screen where the cam doesn't move
-const DEAD_ZONE = 500
+const DEAD_ZONE = 400
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion: # If the mouse moved...

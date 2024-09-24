@@ -58,7 +58,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		print(floor(to_local(event.position)))
 		print(floor(position))
-		if event.pressed:
+		if event.pressed and Input.is_action_pressed(&"grapple"):
 			# We clicked the mouse -> shoot()
 			$Chain.shoot(event.position - get_viewport().size * 0.5)
 		else:
@@ -121,7 +121,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 				wall_index = contact_index
 				wall_state = 1
 				
-	if found_floor:
+	if found_floor or found_wall:
 		airborn_time = 0.0
 	else:
 		# Add to the time spent in the air
@@ -132,6 +132,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 	# Hook physics
 	if $Chain.hooked:
+		print(found_wall)
 		# `to_local($Chain.tip).normalized()` is the direction that the chain is pulling
 		chain_velocity = to_local($Chain.tip).normalized() * CHAIN_PULL
 		if chain_velocity.y > 0:
@@ -145,6 +146,11 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 			# direction than the chain is pulling
 			# reduce its pull
 			chain_velocity.x *= 0.7
+		if crouch:
+			chain_velocity.y += CHAIN_PULL
+		if jump or move_up:
+			chain_velocity.y -= CHAIN_PULL
+		chain_velocity
 	else:
 		# Not hooked -> no chain velocity
 		chain_velocity = Vector2(0,0)
@@ -183,7 +189,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if found_wall and not on_floor:
 		velocity = wall_movement(velocity, move_up, crouch, step)
 		if jump:
-			velocity = wall_jump(velocity, step, wall_state)
+			velocity = wall_jump(velocity, step, wall_state, airborn_time)
 			
 	# Do checks for character on floor for gen movement
 	if on_floor:
@@ -312,15 +318,23 @@ func climb_down(velocity, step):
 		velocity.y = CLIMB_MAX
 	return velocity.y
 	
-func wall_jump(velocity, step, wall_s):
+func wall_jump(velocity, step, wall_s, aerial):
 	# Jump while clinging to a wall on your left
-	if (wall_s == -1):
-		velocity.y = -JUMP_VELOCITY / sqrt(2)
-		velocity.x = -JUMP_VELOCITY / sqrt(2)
+	if (wall_s == -1) and (airborn_time < MAX_FLOOR_AIRBORN_TIME):
+		if (abs(velocity.y) > JUMP_VELOCITY / sqrt(2)):
+			velocity.y = -abs(velocity.y)
+			velocity.x = -abs(velocity.y)
+		else:
+			velocity.y = -JUMP_VELOCITY / sqrt(2)
+			velocity.x = -JUMP_VELOCITY / sqrt(2)
 	# Jump while clinging to a wall on your right
-	if (wall_s == 1):
-		velocity.y = -JUMP_VELOCITY / sqrt(2)
-		velocity.x = JUMP_VELOCITY / sqrt(2)
+	if (wall_s == 1) and (airborn_time < MAX_FLOOR_AIRBORN_TIME):
+		if (abs(velocity.y) > JUMP_VELOCITY / sqrt(2)):
+			velocity.y = -abs(velocity.y)
+			velocity.x = abs(velocity.y)
+		else:
+			velocity.y = -JUMP_VELOCITY / sqrt(2)
+			velocity.x = JUMP_VELOCITY / sqrt(2)
 	return velocity
 	
 func wall_movement(velocity, move_up, crouch, step):
