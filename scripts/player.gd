@@ -13,7 +13,8 @@ const CLIMB_HMAX = 1700.0
 const HARD_Y_MAX = 500.0
 const HARD_X_MAX = 350.0
 const MAX_FLOOR_AIRBORN_TIME = 0.15
-const MAX_WALL_AIRBORN_TIME = 0.15
+const MAX_WALL_AIRBORN_TIME = 2.0
+const WALL_TIME_INCREMENTER = 0.15
 const MAX_JUMPS = 2
 const CHAIN_PULL = 27
 
@@ -34,6 +35,7 @@ var grappling := false
 var floor_h_velocity: float = 0.0
 var floor_v_velocity: float = 0.0
 var airborn_time: float = 1e20
+var on_wall_time := MAX_WALL_AIRBORN_TIME
 
 @onready var ray_cast_2d: RayCast2D = $RayCast2D
 @onready var speed = 10
@@ -55,10 +57,8 @@ func _input(event: InputEvent) -> void:
 """
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		print(floor(to_local(event.position)))
-		print(floor(position))
-		if event.pressed and Input.is_action_pressed(&"grapple"):
+	if event is InputEventMouseButton and Input.is_action_pressed:
+		if event.pressed and not Input.is_action_pressed(&"grapple_hold"):
 			# We clicked the mouse -> shoot()
 			$Chain.shoot(event.position - get_viewport().size * 0.5)
 		else:
@@ -68,7 +68,6 @@ func _input(event: InputEvent) -> void:
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	var velocity := state.get_linear_velocity()
 	var step := state.get_step()
-	
 	var new_anim := anim
 	var new_siding_left := siding_left
 	
@@ -101,7 +100,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	
 	var found_wall := false
 	var wall_index := -1
-	wall_state = 0
 	
 	
 	for contact_index in state.get_contact_count():
@@ -132,7 +130,6 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 	# Hook physics
 	if $Chain.hooked:
-		print(found_wall)
 		# `to_local($Chain.tip).normalized()` is the direction that the chain is pulling
 		chain_velocity = to_local($Chain.tip).normalized() * CHAIN_PULL
 		if chain_velocity.y > 0:
@@ -158,7 +155,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 
 # Do general jump logic
-	if jumping:
+	if jumping and on_wall_time < 0:
 		up_limit = false
 		# Falling logic
 		if velocity.y > 0:
@@ -174,22 +171,17 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		if stopping_jump:
 			velocity.y += STOP_JUMP_FORCE * step
 	
-	if jumps_used + 1 < MAX_JUMPS and jump and jump_hold:
+	if jumps_used + 1 < MAX_JUMPS and jump and jump_hold and on_wall_time < 0:
 		# Check if player wants to jump
 		velocity.y = -JUMP_VELOCITY
 		up_limit = false
 		jumping = true
 		stopping_jump = false
-		if not found_wall:
+		if not found_wall and on_wall_time < 0:
+			print("Jumped")
 			jumps_used += 1
 		if jumps_used >= 2:
 			velocity.x = 0
-			
-		
-	if found_wall and not on_floor:
-		velocity = wall_movement(velocity, move_up, crouch, step)
-		if jump:
-			velocity = wall_jump(velocity, step, wall_state, airborn_time)
 			
 	# Do checks for character on floor for gen movement
 	if on_floor:
@@ -251,6 +243,20 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 			
 		if absf(velocity.y) < 0.1:
 			new_anim = "jump"
+	if found_wall:
+		on_wall_time = MAX_WALL_AIRBORN_TIME
+	else:
+		on_wall_time -= WALL_TIME_INCREMENTER
+	
+	if found_wall and not found_floor:
+		velocity = wall_movement(velocity, move_up, crouch, step)
+		if velocity.y > 0:
+			on_wall_time -= WALL_TIME_INCREMENTER
+		else:
+			on_wall_time = MAX_WALL_AIRBORN_TIME
+
+	if jump and not found_floor and on_wall_time > 0:
+			velocity = wall_jump(velocity, step, wall_state, airborn_time, found_wall, on_wall_time)
 	
 	# Handle grappling movement
 	if grappling:
@@ -258,7 +264,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	
 	if grapple_off:
 		mouse_position = null
-
+	
 	# Flip character if moving new direction
 	if new_siding_left != siding_left:
 		if new_siding_left:
@@ -278,7 +284,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	if found_floor and grapple_off:
 		floor_h_velocity = state.get_contact_collider_velocity_at_position(floor_index).x
 		velocity.x += floor_h_velocity
-	if found_wall:
+	elif found_wall:
 		floor_v_velocity = state.get_contact_collider_velocity_at_position(wall_index).y
 		velocity.y += floor_v_velocity
 		
@@ -318,23 +324,29 @@ func climb_down(velocity, step):
 		velocity.y = CLIMB_MAX
 	return velocity.y
 	
-func wall_jump(velocity, step, wall_s, aerial):
+func wall_jump(velocity, step, wall_s, aerial, foundWall, onWallTime):
+	print(foundWall)
+	print(wall_s)
 	# Jump while clinging to a wall on your left
-	if (wall_s == -1) and (airborn_time < MAX_FLOOR_AIRBORN_TIME):
+	if (wall_s == -1) and ((onWallTime > 0)):
 		if (abs(velocity.y) > JUMP_VELOCITY / sqrt(2)):
+			print("Traveled")
 			velocity.y = -abs(velocity.y)
 			velocity.x = -abs(velocity.y)
 		else:
+			print("Traveled")
 			velocity.y = -JUMP_VELOCITY / sqrt(2)
-			velocity.x = -JUMP_VELOCITY / sqrt(2)
+			velocity.x = -JUMP_VELOCITY
 	# Jump while clinging to a wall on your right
-	if (wall_s == 1) and (airborn_time < MAX_FLOOR_AIRBORN_TIME):
+	elif (wall_s == 1) and ((onWallTime > 0)):
 		if (abs(velocity.y) > JUMP_VELOCITY / sqrt(2)):
+			print("Traveled")
 			velocity.y = -abs(velocity.y)
 			velocity.x = abs(velocity.y)
 		else:
+			print("Traveled")
 			velocity.y = -JUMP_VELOCITY / sqrt(2)
-			velocity.x = JUMP_VELOCITY / sqrt(2)
+			velocity.x = JUMP_VELOCITY
 	return velocity
 	
 func wall_movement(velocity, move_up, crouch, step):

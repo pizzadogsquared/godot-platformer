@@ -1,8 +1,7 @@
-[gd_scene load_steps=29 format=3 uid="uid://b53awpidr7e3w"]
+[gd_scene load_steps=28 format=3 uid="uid://b53awpidr7e3w"]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_fks4w"]
 [ext_resource type="Texture2D" uid="uid://cevm251owy60b" path="res://assets/sprites/knight.png" id="1_i2uko"]
-[ext_resource type="Script" path="res://scripts/camera_2d.gd" id="3_3loqw"]
 [ext_resource type="PackedScene" uid="uid://cjx73hhmswx6s" path="res://scenes/chain.tscn" id="4_h4pek"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_t25sq"]
@@ -199,9 +198,9 @@ shape = SubResource("SeparationRayShape2D_5yja8")
 zoom = Vector2(3, 3)
 position_smoothing_enabled = true
 position_smoothing_speed = 3.5
-script = ExtResource("3_3loqw")
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
-polygon = PackedVector2Array(-4, -3, 4, -3, 4, 11, -4, 11)
+polygon = PackedVector2Array(-3, -2, 3, -2, 3, 10, -3, 10)
 
 [node name="Chain" parent="." instance=ExtResource("4_h4pek")]
+visible = false
