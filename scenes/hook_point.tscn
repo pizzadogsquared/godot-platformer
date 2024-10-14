@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://dytgt5x2bsb0f"]
+
+[ext_resource type="Texture2D" uid="uid://brn5rgqmve6ex" path="res://assets/sprites/hook.png" id="1_8rgyt"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ceco4"]
+
+[node name="HookPoint" type="StaticBody2D"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_ceco4")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-11, 1)
+rotation = 1.5708
+texture = ExtResource("1_8rgyt")
+
+[node name="Marker2D" type="Marker2D" parent="."]
+position = Vector2(-21, 0)

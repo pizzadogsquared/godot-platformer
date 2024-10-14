@@ -9,7 +9,11 @@ var motion = Vector2()
 var acc = 10
 var speed = 250
 const UP = Vector2(0, -1)
+
+
+
 func _physics_process(delta: float) -> void:
+	
 	# Add the gravity.
 	if not is_on_floor():
 		velocity += get_gravity() * 1.45 * delta
@@ -59,5 +63,7 @@ func _physics_process(delta: float) -> void:
 		if velocity.x < 0.0:
 			motion.x = min(lerpf(motion.x, 0.0, 0.30), 0)
 	
+	
 	velocity.x = motion.x
+	
 	move_and_slide()

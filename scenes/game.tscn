@@ -1,7 +1,9 @@
-[gd_scene load_steps=5 format=4 uid="uid://1hvr3lgsarq1"]
+[gd_scene load_steps=7 format=4 uid="uid://1hvr3lgsarq1"]
 
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_7ucdo"]
 [ext_resource type="Texture2D" uid="uid://e7l5r7o20flq" path="res://assets/sprites/world_tileset.png" id="2_0jf4x"]
 [ext_resource type="PackedScene" uid="uid://wdyaln457bco" path="res://scenes/player_1.tscn" id="3_0bkpv"]
+[ext_resource type="PackedScene" uid="uid://dytgt5x2bsb0f" path="res://scenes/hook_point.tscn" id="3_5v4gl"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6nuoa"]
 texture = ExtResource("2_0jf4x")
@@ -54,6 +56,7 @@ physics_layer_0/collision_mask = 7
 sources/0 = SubResource("TileSetAtlasSource_6nuoa")
 
 [node name="Game" type="Node2D"]
+script = ExtResource("1_7ucdo")
 
 [node name="TileMap" type="Node" parent="."]
 
@@ -62,3 +65,5 @@ tile_map_data = PackedByteArray("AAD+/wAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAA
 tile_set = SubResource("TileSet_rnhi7")
 
 [node name="Player1" parent="." instance=ExtResource("3_0bkpv")]
+
+[node name="HookPoint" parent="." instance=ExtResource("3_5v4gl")]
