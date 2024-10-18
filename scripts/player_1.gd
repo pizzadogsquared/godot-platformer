@@ -11,7 +11,6 @@ var speed = 250
 var air_jumps_used = 0
 var wall_timer = 0
 var jump_timer = 0
-var jumping = false
 var start_jump_timing = false
 var start_wall_timing = false
 const UP = Vector2(0, -1)
