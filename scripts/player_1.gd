@@ -20,7 +20,8 @@ const UP = Vector2(0, -1)
 func _physics_process(delta: float) -> void:
 	# Timer to handle coyote time
 	if not is_on_floor() and not is_on_wall():
-		aerial_timer += 1
+		if aerial_timer < 30:
+			aerial_timer += 1
 	else:
 		aerial_timer = 0
 	
@@ -29,6 +30,8 @@ func _physics_process(delta: float) -> void:
 		motion.y += get_gravity().y * 1.35 * delta
 		velocity.y = motion.y
 	if is_on_floor():
+		motion.y = 0
+	if is_on_ceiling():
 		motion.y = 0
 	
 	# Wall climb movement
