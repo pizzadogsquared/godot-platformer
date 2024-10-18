@@ -189,17 +189,4 @@ offset = Vector2(-1, -12)
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2, 2)
 
-[node name="Line2D" type="Line2D" parent="."]
-position = Vector2(0.176, 0.301)
-scale = Vector2(1.03, 1.03)
-points = PackedVector2Array(0, 0, 130.527, 20.094)
-width = 5.71
-default_color = Color(0.114897, 0.114897, 0.114897, 1)
-texture_mode = 1
-
-[node name="RayCast2D" type="RayCast2D" parent="."]
-
-[node name="PinJoint2D" type="PinJoint2D" parent="."]
-node_a = NodePath("..")
-softness = 16.0
-motor_target_velocity = 1.42419
+[node name="Timer" type="Timer" parent="."]

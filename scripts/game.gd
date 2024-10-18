@@ -1,4 +1,5 @@
 extends Node2D
+"""
 @onready var ray_cast_2d: RayCast2D = $RayCast2D
 @onready var speed = 10
 @export var hook: StaticBody2D
@@ -46,3 +47,4 @@ func _process(delta: float) -> void:
 		line.add_point(to_local(line_end.global_position))
 	else:
 		line.clear_points()
+"""
