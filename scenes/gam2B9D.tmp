@@ -66,7 +66,6 @@ tile_set = SubResource("TileSet_rnhi7")
 [node name="Player1" parent="." instance=ExtResource("3_0bkpv")]
 
 [node name="GameManager" type="Node" parent="."]
-unique_name_in_owner = true
 script = ExtResource("3_364ri")
 
 [node name="Spikeball" parent="." instance=ExtResource("4_1mwdq")]

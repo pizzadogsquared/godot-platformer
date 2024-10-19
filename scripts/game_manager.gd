@@ -1,5 +1,8 @@
 extends Node
+@onready var player: CharacterBody2D = $"../Player1"
 
-
-func cool_func():
-	print("I did a cool thing!")
+func game_over():
+	player.motion = Vector2.ZERO
+	player.velocity = Vector2.ZERO
+	player.is_killed = true
+	

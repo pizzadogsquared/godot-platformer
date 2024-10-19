@@ -188,5 +188,6 @@ offset = Vector2(-1, -12)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2, 2)
+position_smoothing_enabled = true
 
 [node name="Timer" type="Timer" parent="."]

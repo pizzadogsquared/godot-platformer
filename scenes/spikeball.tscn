@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=3 uid="uid://drjp6wfarbqvl"]
+
+[ext_resource type="Texture2D" uid="uid://cxqt11kigcsmx" path="res://assets/sprites/spikeball.png" id="1_8mrfi"]
+[ext_resource type="PackedScene" uid="uid://b6ybgtkjwdq3p" path="res://scenes/killzone.tscn" id="2_hhp71"]
+[ext_resource type="Script" path="res://scripts/spikeball.gd" id="2_ojsrl"]
+[ext_resource type="Texture2D" uid="uid://bdfapnvfibnwb" path="res://assets/sprites/chain.png" id="3_08oa7"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8l1lb"]
+
+[node name="Spikeball" type="Node2D"]
+script = ExtResource("2_ojsrl")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+z_index = 1
+texture = ExtResource("1_8mrfi")
+
+[node name="Line2D" type="Line2D" parent="."]
+texture_repeat = 2
+texture = ExtResource("3_08oa7")
+texture_mode = 1
+
+[node name="Killzone" parent="." instance=ExtResource("2_hhp71")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Killzone"]
+z_index = 2
+scale = Vector2(0.95, 0.95)
+shape = SubResource("CircleShape2D_8l1lb")

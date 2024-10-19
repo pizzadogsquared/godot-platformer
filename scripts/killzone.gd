@@ -1,11 +1,13 @@
 extends Area2D
 
+@onready var game_manager: Node = $/root/Game/GameManager
 @onready var timer: Timer = $Timer
 
-func _on_body_entered(body: Node2D) -> void:
+func _on_body_entered(body: CharacterBody2D) -> void:
 	print("You died!")
 	Engine.time_scale = 0.5
-	body.get_node("CollisionShape2D").queue_free()
+	get_node("CollisionShape2D").queue_free()
+	game_manager.game_over()
 	timer.start()
 
 

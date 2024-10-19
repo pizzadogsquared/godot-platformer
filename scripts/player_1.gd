@@ -4,6 +4,7 @@ extends CharacterBody2D
 #const SPEED = 230.0
 const JUMP_VELOCITY = -500.0
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var camera: Camera2D = $Camera2D
 
 var motion = Vector2()
 var acc = 10
@@ -21,9 +22,19 @@ var wall_falling = false
 var dashing = false
 const UP = Vector2(0, -1)
 
-
+var zoom = Vector2.ZERO
+var is_killed = false
+var kill_timer = 0
 
 func _physics_process(delta: float) -> void:
+	if is_killed:
+		kill_timer += 1
+		if kill_timer < 30 and kill_timer % 5:
+			camera.set_offset(Vector2(randf_range(-2, 2), randf_range(-2, 2)))
+		zoom = camera.get_zoom()
+		camera.set_zoom(Vector2(zoom.x+0.01, zoom.y+0.01))
+		return
+	
 	# Timer to handle coyote time
 	if not is_on_floor() and not is_on_wall():
 		if aerial_timer < 30:
