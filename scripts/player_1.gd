@@ -9,10 +9,16 @@ var motion = Vector2()
 var acc = 10
 var speed = 250
 var air_jumps_used = 0
+var dashes_used = 0
 var aerial_timer = 0
+var ldash_timer = 0
+var rdash_timer = 0
 var start_aerial_timer = false
+var start_ldash_timer = false
+var start_rdash_timer = false
 var last_wall_normal = Vector2.ZERO
 var wall_falling = false
+var dashing = false
 const UP = Vector2(0, -1)
 
 
@@ -24,6 +30,18 @@ func _physics_process(delta: float) -> void:
 			aerial_timer += 1
 	else:
 		aerial_timer = 0
+
+	# Timer for dash logic
+	if start_ldash_timer:
+		if ldash_timer < 30:
+			ldash_timer += 1
+	if start_rdash_timer:
+		if rdash_timer < 30:
+			rdash_timer += 1
+	if not start_ldash_timer:
+		ldash_timer = 0
+	if not start_rdash_timer:
+		rdash_timer = 0
 	
 	# Add the gravity
 	if not is_on_floor() and not is_on_wall():
@@ -36,6 +54,7 @@ func _physics_process(delta: float) -> void:
 	
 	# Wall climb movement
 	if is_on_wall():
+		dashes_used = 0
 		if Input.is_action_pressed("move_up") and not Input.is_action_pressed("crouch"):
 			motion.y = max(motion.y - acc, -speed)
 			velocity.y = motion.y
@@ -54,6 +73,26 @@ func _physics_process(delta: float) -> void:
 	# Failsafe to avoid unintentional wall-jumping
 	if aerial_timer >= 8:
 		wall_falling = false
+		
+		
+	if is_on_floor() and dashing:
+		dashing = false
+	if is_on_wall() and dashing:
+		dashing = false
+	
+	# Do dash velocity for left dash
+	if Input.is_action_pressed("move_left") and Input.is_action_pressed("dash") and dashes_used < 1:
+		motion.x = JUMP_VELOCITY * 1.25
+		velocity.x = motion.x
+		dashes_used += 1
+		dashing = true
+		print("DASHED")
+	if Input.is_action_pressed("move_right") and Input.is_action_pressed("dash") and dashes_used < 1:
+		motion.x = -JUMP_VELOCITY * 1.25
+		velocity.x = motion.x
+		dashes_used += 1
+		dashing = true
+		print("DASHED")
 	
 	# If our last known vector for a wall was a left wall, and we're falling
 	#from that wall:
@@ -112,21 +151,22 @@ func _physics_process(delta: float) -> void:
 	# Handle left/right floor movement acceleration & reset jumps
 	if is_on_floor():
 		air_jumps_used = 0
+		dashes_used = 0
 		wall_falling = false
-		if Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
+		if not dashing and Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
 			motion.x = min(motion.x + acc, speed)
-		elif Input.is_action_pressed("move_left") and not Input.is_action_pressed("move_right"):
+		elif not dashing and Input.is_action_pressed("move_left") and not Input.is_action_pressed("move_right"):
 			motion.x = max(motion.x - acc, -speed)
-		if not Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
+		if not dashing and not Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
 			motion.x = lerpf(motion.x, 0, 0.45)
 
 	# Handle aerial left/right movement acceleration
 	else:
-		if Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
+		if not dashing and Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
 			motion.x = min(motion.x + acc, speed)
-		elif Input.is_action_pressed("move_left") and not Input.is_action_pressed("move_right"):
+		elif not dashing and Input.is_action_pressed("move_left") and not Input.is_action_pressed("move_right"):
 			motion.x = max(motion.x - acc, -speed)
-		if not Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
+		if not dashing and not Input.is_action_pressed("move_right") and not Input.is_action_pressed("move_left"):
 			motion.x = lerpf(motion.x, 0, 0.05)
 	
 	# If right momentum but pressing left
