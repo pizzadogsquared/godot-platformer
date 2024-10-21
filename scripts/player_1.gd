@@ -31,8 +31,9 @@ func _physics_process(delta: float) -> void:
 		kill_timer += 1
 		if kill_timer < 30 and kill_timer % 5:
 			camera.set_offset(Vector2(randf_range(-2, 2), randf_range(-2, 2)))
-		zoom = camera.get_zoom()
-		camera.set_zoom(Vector2(zoom.x+0.01, zoom.y+0.01))
+		else:
+			zoom = camera.get_zoom()
+			camera.set_zoom(Vector2(zoom.x+0.01, zoom.y+0.01))
 		return
 	
 	# Timer to handle coyote time
@@ -64,7 +65,7 @@ func _physics_process(delta: float) -> void:
 		motion.y = 0
 	
 	# Wall climb movement
-	if is_on_wall():
+	if is_on_wall() and not is_on_floor():
 		dashes_used = 0
 		if Input.is_action_pressed("move_up") and not Input.is_action_pressed("crouch"):
 			motion.y = max(motion.y - acc, -speed)
@@ -77,7 +78,7 @@ func _physics_process(delta: float) -> void:
 			velocity.y = motion.y
 	
 	# Get info for wall-jumping logic
-	if is_on_wall():
+	if is_on_wall() and not is_on_floor():
 		last_wall_normal = get_wall_normal()
 		wall_falling = true
 	
@@ -92,13 +93,13 @@ func _physics_process(delta: float) -> void:
 		dashing = false
 	
 	# Do dash velocity for left dash
-	if Input.is_action_pressed("move_left") and Input.is_action_pressed("dash") and dashes_used < 1:
+	if Input.is_action_pressed("move_left") and Input.is_action_just_pressed("dash") and dashes_used < 1:
 		motion.x = JUMP_VELOCITY * 1.25
 		velocity.x = motion.x
 		dashes_used += 1
 		dashing = true
 		print("DASHED")
-	if Input.is_action_pressed("move_right") and Input.is_action_pressed("dash") and dashes_used < 1:
+	if Input.is_action_pressed("move_right") and Input.is_action_just_pressed("dash") and dashes_used < 1:
 		motion.x = -JUMP_VELOCITY * 1.25
 		velocity.x = motion.x
 		dashes_used += 1
@@ -193,7 +194,8 @@ func _physics_process(delta: float) -> void:
 		if velocity.x < 0.0:
 			motion.x = min(lerpf(motion.x, 0.0, 0.30), 0)
 	
-	
+	if motion.x > speed:
+		lerpf(motion.x, speed, 0.15)
 	velocity.x = motion.x
 	
 	
